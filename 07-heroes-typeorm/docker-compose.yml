@@ -1,0 +1,9 @@
+PostgreSQL:
+  image: postgres:9.6-alpine
+  ports:
+    - "5432:5432"
+  environment:
+    - DEBUG=false
+    - POSTGRES_USER=root
+    - POSTGRES_PASSWORD=toor
+    - POSTGRES_DB=heroes
