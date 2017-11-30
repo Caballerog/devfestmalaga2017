@@ -1,0 +1,21 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "strictNullChecks": false,
+        "allowUnusedLabels": true,
+        "noUnusedLocals": false,
+        "noImplicitAny": false,
+        "noImplicitReturns": false,
+        "noImplicitUseStrict": false,
+        "noUnusedParameters": false,
+        "outDir": "../dist",
+        "types": [
+            "jest",
+            "node"
+        ]
+    },
+    "include": [
+        "./**/*.ts",
+        "./**/*.spec.ts"
+    ]
+}
