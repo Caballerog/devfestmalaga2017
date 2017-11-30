@@ -1,0 +1,1501 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>Angular's Architecture on the server: NestJS</title>
+
+    <link rel="stylesheet" href="css/reveal.css">
+    <!-- <link rel="stylesheet" href="css/theme/black.css"> -->
+    <link rel="stylesheet" href="css/theme/night.css">
+
+    <!-- Theme used for syntax highlighting of code -->
+    <link rel="stylesheet" href="lib/css/zenburn.css">
+
+    <!-- Printing and PDF exports -->
+    <script>
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = window.location.search.match(/print-pdf/gi) ? 'css/print/pdf.css' : 'css/print/paper.css';
+        document.getElementsByTagName('head')[0].appendChild(link);
+    </script>
+
+    <!-- QR Codes -->
+    <script type="text/javascript" src="qrcodejs/qrcode.js"></script>
+
+    <!-- Manual style tweaks -->
+    <style>
+        /* Columns */
+
+        /* ref: https://stackoverflow.com/questions/30861845/how-to-use-two-column-layout-with-reveal-js#answer-44392145 */
+
+        body {
+            background-color: #222;
+        }
+
+        .cat {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            height: 100%;
+            width: 100%;
+            max-width: 60%;
+            z-index: -1;
+            background: url("images/cat2.png") center center no-repeat;
+            background-size: cover;
+            transition: all 300ms ease-in;
+            -moz-transition: all 300ms ease-in;
+            -webkit-transition: all 300ms ease-in;
+        }
+
+        .columns {
+            display: flex;
+        }
+
+        .col {
+            flex: 1;
+        }
+
+        .col-author {
+            flex: 0;
+        }
+
+        /* Colours */
+
+        .text-red {
+            color: #f00;
+        }
+
+        .text-green {
+            color: #0f0;
+        }
+
+        .text-yellow {
+            color: #ff0;
+        }
+
+        .text-blue {
+            color: #00f;
+        }
+
+        .text-primary {
+            color: #42affa;
+        }
+
+        .reveal section img.no-border {
+            margin: 0px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+
+        img.author {
+            border-radius: 500px;
+            max-width: 200px;
+            font-weight: bolder;
+        }
+
+        ul.author-desc li {
+            list-style-type: none;
+            padding: 0em 0.8em;
+        }
+
+        /* External Link */
+
+        .prj-link {
+            font-family: monospace !important;
+            font-size: 0.7em !important;
+        }
+
+        .prj-link::before {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            margin-right: 0.1em;
+            margin-left: 0.1em;
+            content: "";
+            background: url("images/micro-sd-card.png") no-repeat 0 0;
+            background-size: 100%;
+            vertical-align: middle;
+        }
+
+        /* QR Code */
+
+        .qrcode {
+            background-color: #fff;
+            padding: 1px 1px 1px 1px;
+            display: inline-block;
+        }
+
+        .half-size {
+            font-size: 0.5em !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <!-- =================== INTRODUCTION =================== -->
+            <section>
+                <section>
+                    <h3>Angular's Architecture on the server: NestJS</h3>
+
+                    <div class="stretch">
+                        <div class="stretch">
+                            <div class="columns">
+                                <div class="col">
+                                    <div class="columns" style="font-size:0.7em">
+                                        <div class="col-author">
+                                            <img class="no-border author" src="images/authors/CarlosCaballero.jpg">
+                                        </div>
+                                        <div class="col">
+                                            <ul class="author-desc text-primary">
+                                                <li> PhD. Computer Science</li>
+                                                <li>Computer Science Teacher</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div style="text-align:left">
+                                        <a href="https://www.twitter.com/carlillo">Carlos Caballero</a>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="columns" style="font-size:0.7em">
+
+                                        <div class="col">
+                                            <ul class="author-desc text-primary">
+                                                <li>Web Developer</li>
+                                                <li>Computer Science Student</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-author">
+                                            <img class="no-border author" src="images/authors/AntonioVillena.jpg">
+                                        </div>
+                                    </div>
+                                    <div style="text-align:right">
+                                        <a href="https://github.com/xxxtonixxx">Antonio Villena</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sretch">
+                            <img class="no-border" src="images/logo/nestjs.svg">
+                            <img class="no-border" src="images/logo/angular.svg">
+                        </div>
+                    </div>
+
+                    <!-- Side notes shown when pressing 's' -->
+                    <aside data-markdown class="notes">
+                        # Remember to bring - laptop + power supply - pyboard - USB cable (micro usb) - micro SD card (pre-loaded with [pyboard-sd](https://github.com/fragmuffin/howto-micropython/tree/master/pyboard-sd))
+                        - potentiometer (with connectors to pyboard) TODO: finish things list - Touch LCD - LCD connections
+                        # Hotkeys - `[space]` navigates through each slide - `[esc]` zoom out - `[Alt+Click]` zoom to element
+
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Contents</h2>
+                    <div class="columns">
+                        <div class="col">
+                            <div class="qrcode" align="center"></div>
+                            <div class="half-size">
+                                <a class="qrcode-link"></a>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <ul style="font-size:0.85em">
+                                <li>
+                                    <a href="#/what_is_nestJS">What is nestJS?</a>
+                                </li>
+                                <li>
+                                    <a href="#/controllers">Controllers</a>
+                                </li>
+                                <li>
+                                    <a href="#/components">Components</a>
+                                </li>
+                                <li>
+                                    <a href="#/modules">Modules</a>
+                                </li>
+                                <li>
+                                    <a href="#/middlewares">Middlewares</a>
+                                </li>
+                                <li>
+                                    <a href="#/exception">Exception </a>
+                                </li>
+                                <li>
+                                    <a href="#/pipes">Pipes </a>
+                                </li>
+                                <li>
+                                    <a href="#/guards">Guards</a>
+                                </li>
+                                <li>
+                                    <a href="#/database">Database</a>
+                                </li>
+                                <li>
+                                    <a href="#/testing">Testing</a>
+                                    <ul>
+                                        <li>
+                                            <a href="#/unit">Unit Test</a>
+                                        </li>
+                                        <li>
+                                            <a href="#/e2e">Integration Test</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- =================== WHAT IS MICROPYTHON =================== -->
+            <section id="what_is_nestJS">
+                <section data-background="#28306a">
+                    <h1 style="font-size: 3.5em">What is NestJS?</h1>
+                    <h3>
+                        <a href="https://github.com/nestjs/nest">
+                            <img class="plain" src="images/logo/nestjs.svg" style="vertical-align: middle; margin-right:0.2em" />https://github.com/nestjs/nest</a>
+                    </h3>
+                    <blockquote>
+                        &ldquo;Nest is a framework for building efficient, scalable Node.js web applications.&rdquo;
+                    </blockquote>
+                </section>
+
+                <section>
+                    <h2>NestJS</h2>
+                    <ul>
+                        <li>It is built with TypeScript and combines elements of
+                            <ul>
+                                <li>OOP (Object Oriented Programming)</li>
+                                <li> FP (Functional Programming)
+                                </li>
+                                <li>FRP (Functional Reactive Programming).</li>
+                            </ul>
+                        </li>
+                        <li>Nest makes use of Express, allowing for easy use of the myriad third-party plugins which are available.
+                        </li>
+                    </ul>
+                </section>
+                <section>
+                    <h2>Features</h2>
+                    <ul style="font-size:0.8em">
+                        <li> Syntax similar to
+                            <strong>Angular</strong>. </li>
+                        <li>based on well-known libraries (Express / socket.io).</li>
+                        <li>Dependency Injection. </li>
+                        <li>Modular - defines an easy to follow module definition pattern.</li>
+                        <li>Reactive microservice support with message patterns. </li>
+                        <li>Exception layer - throwable web exceptions with status codes, exception filters.</li>
+                        <li> Pipes - synchronous & asynchronous. </li>
+                        <li>Interceptors - built on top of RxJS.</li>
+                        <li> Guards - attach additional logic in a declarative manner. </li>
+                        <li>Testing utilities (both e2e & unit tests).</li>
+                    </ul>
+
+                </section>
+
+                <section>
+                    <h2>Create a new project</h2>
+                    <pre>
+                        <code class="hljs" data-trim contenteditable>
+                            $ git clone https://github.com/nestjs/typescript-starter.git heroes
+                            $ cd heroes
+                            $ npm install
+                            $ npm start 
+                        </code>
+                    </pre>
+                    <img class="plain" src="images/heroes/heroes11.gif" style="vertical-align: middle" />
+                </section>
+            </section>
+
+            <!-- =================== FRONTEND =================== -->
+            <section id="Frontend">
+                <section data-background="#28306a">
+                    <h2>Frontend: Heroes Tour </h2>
+                    <img class="plain" src="images/tour_heroes0.jpg" width="50%" />
+                    <pre>
+                        <code class="hljs" data-trim contenteditable>
+                                $ cd heroes-tour
+                                $ npm install
+                                $ npm start
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h3>Heroes Tour: Dashboard</h3>
+                    <img class="plain" src="images/tour_heroes1.png" />
+                </section>
+                <section>
+                    <h3>Heroes Tour: List of Heroes</h3>
+                    <img class="plain" src="images/tour_heroes2.png" />
+                </section>
+            </section>
+
+            <!-- =================== HARDWARE =================== -->
+            <section id="controllers">
+                <section data-background="#28306a">
+                    <h1>Controllers</h1>
+                    <img class="plain" src="images/heroes/heroes02.gif" width="60%" />
+
+                </section>
+
+                <section>
+
+                    <!-- <h3>The controllers layer is responsible for handling incoming requests (mostly HTTP).</h3> -->
+                    <img class="plain" src="images/Controllers_1.png" />
+                    <pre>
+                        <code class="hljs" data-trim contenteditable>
+                                import { Get, Controller } from '@nestjs/common';
+                                import { Hero } from './interfaces/hero.interface';
+                                
+                                @Controller('heroes')
+                                export class AppController {
+                                  private HEROES: Hero[] = [];
+                                  @Get()
+                                  heroes(): Hero[] {
+                                    return this.HEROES;
+                                  }
+                                }
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h3>Add cors and bodyparser express middleware in server</h3>
+                    <pre>
+                        <code class="hljs" data-trim contenteditable>
+                            $ npm install cors bodyparser @types/cors
+                        </code>
+                    </pre>
+
+                    <pre>
+                            <span>server.ts</span>
+                        <code class="hljs" data-trim contenteditable>
+                                import { NestFactory } from '@nestjs/core';
+                                import { ApplicationModule } from './modules/app.module';
+                                import * as bodyParser from 'body-parser';
+                                import * as cors from 'cors';
+                                
+                                async function bootstrap() {
+                                    const app = await NestFactory.create(ApplicationModule);
+                                    app.use(cors());
+                                    app.use(bodyParser.json());
+                                    await app.listen(3000);
+                                }
+                                bootstrap();
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h3>CRUD: Heroes I </h3>
+                    <pre>
+                        <code class="hljs" data-trim contenteditable>
+                                @Get()
+                                heroes(): Hero[] {
+                                  return this.HEROES;
+                                }
+                                @Get(':id')
+                                findById( @Param('id') id: string): Hero {
+                                  const heroID = parseInt(id, 10); //Pipe
+                                  return this.HEROES.find(hero => hero.id === heroID);
+                                }
+                                @Get('search/:name')
+                                findByName( @Param('name') name: string): Hero[] {
+                                  return this.HEROES.filter(hero => hero.name.includes(name));
+                                }
+                                </code>
+                            </pre>
+                </section>
+                <section>
+                    <h3>CRUD: Heroes II </h3>
+                    <pre>
+                            <code class="hljs" data-trim contenteditable>
+                                    @Delete(':id')
+                                    deleteById( @Param('id') id: string): Hero {
+                                        const heroID = parseInt(id, 10);
+                                        const heroIndex = this.HEROES.findIndex(hero => hero.id === heroID);
+                                        const hero = this.HEROES[heroIndex];
+                                        this.HEROES.splice(heroIndex, 1);
+                                        return hero;
+                                    }
+                                    @Post()
+                                    createHero( @Body('name') name: string) {
+                                        const hero: Hero = {
+                                            name,
+                                            id: this.FAKE_ID,
+                                        };
+                                        this.HEROES.push(hero);
+                                        this.FAKE_ID = this.FAKE_ID + 1;
+                                        return hero;
+                                    }
+                                    </code>
+                                </pre>
+                </section>
+                <section>
+                    <h3>CRUD: Heroes III </h3>
+                    <pre>
+                        <code class="hljs" data-trim contenteditable>
+                                        @Put()
+                                        updateById( @Body('id') id: string, @Body('name') name: string): Hero {
+                                            const heroID = parseInt(id, 10);
+                                            const hero = this.HEROES.find(hero => hero.id === heroID);
+                                            if (hero) {
+                                                hero.name = name;
+                                            }
+                                            return hero;
+                                        }
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h2>Request object</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nest Decorators</th>
+                                <th>Plain express object</th>
+                            </tr>
+                        </thead>
+                        <tbody style="font-size:0.7em">
+                            <tr>
+                                <td>@Request()</td>
+                                <td>req</td>
+                            </tr>
+                            <tr>
+                                <td>@Response()</td>
+                                <td>res</td>
+                            </tr>
+                            <tr>
+                                <td>@Next()</td>
+                                <td>next</td>
+                            </tr>
+                            <tr>
+                                <td>@Session()</td>
+                                <td>req.session</td>
+                            </tr>
+                            <tr>
+                                <td>@Param(param?: string</td>
+                                <td>req.params / req.params[param]</td>
+                            </tr>
+                            <tr>
+                                <td>@Body(param?: string)</td>
+                                <td>req.body / req.body[param]</td>
+                            </tr>
+                            <tr>
+                                <td>@Query(param?: string)</td>
+                                <td>req.query / req.query[param]</td>
+                            </tr>
+                            <tr>
+                                <td>@Headers(param?: string)</td>
+                                <td>req.headers / req.headers[param]</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+            </section>
+            <section id="Components">
+                <section data-background="#28306a">
+                    <h1 style="word-wrap: normal">Components</h1>
+                    <img class="plain" src="images/heroes/heroes12.gif" width="60%" />
+                </section>
+                <section>
+                    <img class="plain" src="images/Components_1.png" />
+                    <div>Almost everything is a component (Service, Repository, Factory, ...) and they can be injected into controllers
+                        or to another components.</div>
+                </section>
+                <section>
+                    <h2>Create a component: HeroesService</h2>
+                    <pre>
+                        <code class="hljs" data-trim contenteditable>
+                                import { Component } from '@nestjs/common';
+                                import { Hero } from './interfaces/hero.interface';
+                                
+                                @Component()
+                                export class HeroesService {
+                                  private FAKE_ID = 21;
+                                  private readonly heroes: Hero[] = [];
+                                
+                                  findAll(): Hero[] {}
+                                  findById(heroID: number): Hero {}
+                                  findByName(name: string): Hero[] {}
+                                  updateById(heroID: number, name: string): Hero {}
+                                  deleteById(heroID: number): Hero {}
+                                  create(name: string): Hero {}
+                                }
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h2>Inject Service in Controller</h2>
+                    <pre>
+                            <code class="hljs" data-trim contenteditable>
+                                    @Controller('heroes')
+                                    export class AppController {
+                                      constructor(private readonly heroesService: HeroesService) { }
+                                      @Get()
+                                      heroes(): Hero[] {
+                                        return this.heroesService.findAll();
+                                      }
+                                      @Get(':id')
+                                      findById( @Param('id') id: string): Hero {
+                                        const heroID = parseInt(id, 10); //Pipe
+                                        return this.heroesService.findById(heroID);
+                                      }
+                                      @Get('search/:name')
+                                      findByName( @Param('name') name: string): Hero[] {
+                                        return this.heroesService.findByName(name);
+                                      }
+                            </code>
+                        </pre>
+                </section>
+                <section>
+                    <h2>Add Service in module</h2>
+                    <pre>
+                                <code class="hljs" data-trim contenteditable>
+                                        import { Module } from '@nestjs/common';
+                                        import { AppController } from './app.controller';
+                                        import { HeroesService } from './heroes.service';
+                                        
+                                        @Module({
+                                          modules: [],
+                                          controllers: [AppController],
+                                          components: [
+                                            HeroesService,
+                                          ],
+                                        })
+                                        export class ApplicationModule { }
+                                </code>
+                            </pre>
+                </section>
+
+            </section>
+            <section id="modules">
+                <section data-background="#28306a">
+                    <h1 style="word-wrap: normal">Modules</h1>
+                    <img class="plain" src="images/heroes/heroes04.gif" width="60%" />
+                </section>
+                <section>
+                    <img class="plain" src="images/Modules_1.png" />
+                    <div>Every Nest application has at least one module. In most cases you'll have several modules, each with
+                        closely related set of capabilities.</div>
+                </section>
+                <section style="font-size:0.8em">
+                    <span>The @Module() decorator takes the single object whose properties describe the module.</span>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>components</td>
+                                <td>the components that will be instantiated by the Nest injector and may be shared at least
+                                    across this module.</td>
+                            </tr>
+
+                            <tr>
+                                <td>controllers</td>
+                                <td>the set of controllers which have to be created</td>
+                            </tr>
+                            <tr>
+                                <td>modules</td>
+                                <td>the list of imported modules that export the components which are necessary in this module</td>
+                            </tr>
+                            <tr>
+                                <td>exports</td>
+                                <td>the subset of components that should be available in the other modules</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section>
+                    <h2>HeroesModule</h2>
+                    <pre>
+                        <code class="hljs" data-trim contenteditable>
+                                import { Module } from '@nestjs/common';
+                                import { HeroesService } from './heroes.service';
+                                import { HeroesController } from './heroes.controller';
+                                
+                                @Module({
+                                  modules: [],
+                                  controllers: [
+                                    HeroesController,
+                                  ],
+                                  components: [
+                                    HeroesService,
+                                  ],
+                                })
+                                export class HeroesModule { }
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h2>AppModule</h2>
+                    <pre>
+                            <code class="hljs" data-trim contenteditable>
+                                    import { Module } from '@nestjs/common';
+                                    import { HeroesModule } from './heroes/heroes.module';
+                                    
+                                    @Module({
+                                      modules: [
+                                        HeroesModule,
+                                      ],
+                                      controllers: [],
+                                      components: [],
+                                    })
+                                    export class ApplicationModule { }
+                            </code>
+                        </pre>
+                </section>
+            </section>
+
+            <!-- =================== GETTING STARTED =================== -->
+            <section id="middlewares">
+                <section data-background="#28306a">
+                    <h1 style="word-wrap: normal">Middlewares</h1>
+                    <img class="plain" src="images/heroes/heroes05.gif" width="60%" />
+                </section>
+                <section>
+                    <img class="plain" src="images/Middlewares_1.png" />
+                    <ul>
+                        <li>The middleware is a function, which is called before route handler.</li>
+                        <li>Middleware functions have an access to the request and response objects, so they can modify them.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Cors Middleware</h2>
+                    <pre>
+                                    <code class="hljs" data-trim contenteditable>
+                                            import { Middleware, NestMiddleware } from '@nestjs/common';
+                                            import * as cors from 'cors';
+                                            
+                                            @Middleware()
+                                            export class CorsMiddleware implements NestMiddleware {
+                                              public resolve(
+                                                options?: cors.CorsOptions,
+                                              ): (req: any, res: any, next: any) => void {
+                                                return cors(options);
+                                              }
+                                            }
+                                    </code>
+                                </pre>
+                </section>
+                <section>
+                    <h2>Json Middleware</h2>
+                    <pre>
+                                        <code class="hljs" data-trim contenteditable>
+                                                import { Middleware, NestMiddleware } from '@nestjs/common';
+                                                import { json } from 'express';
+                                                
+                                                @Middleware()
+                                                export class JSONMiddleware implements NestMiddleware {
+                                                  public resolve(): (req: any, res: any, next: any) => void {
+                                                    return json();
+                                                  }
+                                                }
+                                        </code>
+                                    </pre>
+                </section>
+
+                <section>
+                    <h2>App Module</h2>
+                    <pre>
+                        <code class="hljs" data-trim contenteditable>
+                                const allRoutes = {
+                                    method: RequestMethod.ALL,
+                                    path: '*',
+                                  };
+                        </code>
+                                                <code class="hljs" data-trim contenteditable>   
+                                                          export class ApplicationModule implements NestModule {
+                                                          
+                                                            public static corsOptions: CorsOptions | undefined = undefined;
+                                                            public static jsonOptions: any | undefined = undefined;
+                                                          
+                                                            configure(consumer: MiddlewaresConsumer): void {
+                                                              consumer.apply(CorsMiddleware)
+                                                                .with(ApplicationModule.corsOptions)
+                                                                .forRoutes(allRoutes)
+                                                                .apply(JSONMiddleware)
+                                                                .with(ApplicationModule.jsonOptions)
+                                                                .forRoutes(allRoutes);
+                                                            }
+                                                          }
+                                                </code>
+                                            </pre>
+                </section>
+
+
+
+
+            </section>
+
+            <!-- =================== FILE SYSTEM =================== -->
+            <section id="exceptions">
+                <section data-background="#28306a">
+                    <h1 style="word-wrap: normal">Exceptions</h1>
+                    <img class="plain" src="images/heroes/heroes01.gif" width="40%" />
+                </section>
+                <section>
+                    <img class="plain" src="images/Middlewares_1.png" />
+                    <div>
+                        In Nest there's an exceptions layer, which responsibility is to catch the unhandled exceptions and return the appropriate
+                        response to the end-user.
+                    </div>
+                </section>
+                <section>
+                    <h2>HttpException</h2>
+                    <pre>
+                        <code class="hljs" data-trim contenteditable>   
+                        findById(heroID: number): Hero {
+                            const hero = this.heroes.find(hero => hero.id === heroID);
+                            if (!hero) {
+                                throw new HttpException('Hero not found', HttpStatus.NOT_FOUND);
+                            }
+                            return hero;
+                        }
+                    </code>
+                      </pre>
+                    <pre>
+                            <code class="hljs" data-trim contenteditable>   
+                            findByName(name: string): Hero[] {
+                                const heroes = this.heroes.filter(hero => hero.name.includes(name));
+                                if (!heroes.length) {
+                                    throw new NotFoundException('Heroes not found');
+                                }
+                                return heroes;
+                            }
+                        </code>
+                    </pre>
+
+
+                </section>
+                <section>
+                    <h2>CustomExceptions</h2>
+                    <pre>
+                            <code class="hljs" data-trim contenteditable>   
+                            import { NotFoundException } from '@nestjs/common';
+                            
+                            export class NotHeroException extends NotFoundException {
+                                constructor(heroID: number) {
+                                const msg = `The Hero: ID - ${heroID} not found`;
+                                super(msg);
+                                }
+                            }
+                        </code>
+                          </pre>
+                    <pre>
+                                <code class="hljs" data-trim contenteditable>   
+                            import { ForbiddenException } from '@nestjs/common';
+                            import { Hero } from '../../heroes/interfaces/hero.interface';
+                            
+                            export class RepeatHeroException extends ForbiddenException {
+                                constructor(hero: Hero) {
+                                const msg = `The Hero: ${hero.id} - ${hero.name} is repeated`;
+                                super(msg);
+                                }
+                            }
+                            </code>
+                        </pre>
+
+
+                </section>
+                <section>
+                    <h2>CustomExceptions</h2>
+                    <pre>
+                                <code class="hljs" data-trim contenteditable>   
+                                deleteById(heroID: number): Hero {
+                                    const heroIndex = this.heroes.findIndex(hero => hero.id === heroID);
+                                    if (heroIndex === -1) {
+                                        throw new NotHeroException(heroID);
+                                    }
+                                    const hero = this.heroes[heroIndex];
+                                    this.heroes.splice(heroIndex, 1);
+                                    return hero;
+                                }
+                            </code>
+                              </pre>
+                    <pre>
+                            <code class="hljs" data-trim contenteditable>   
+                                const heroFound = this.heroes.find(hero => hero.name === name);
+                                if (heroFound) {
+                                    throw new RepeatHeroException(heroFound);
+                                }
+                                ...
+                                </code>
+                            </pre>
+
+
+                </section>
+            </section>
+            <section id="pipe">
+                <section data-background="#28306a">
+                    <h1 style="word-wrap: normal">Pipe</h1>
+                    <img class="plain" src="images/heroes/heroes06.gif" width="50%" />
+
+                </section>
+                <section>
+                    <img class="plain" src="images/Pipe_1.png" />
+                    <div style="font-size:0.9em">
+                        A pipe transforms the input data to a desired output. Also, it could overtake the validation responsibility, since it's possible
+                        to throw an exception.
+                    </div>
+                </section>
+                <section>
+                    <h2>ParseIntPipe - I</h2>
+                    <pre>
+                        <code class="hljs" data-trim contenteditable>  
+                        import { PipeTransform, Pipe, ArgumentMetadata, HttpStatus } from '@nestjs/common';
+                        import { NotHeroException } from '../exceptions/not-hero.exception';
+                        
+                        @Pipe()
+                        export class ParseIntPipe implements PipeTransform&lt;string&gt; {
+                          async transform(value: string, metadata: ArgumentMetadata) {
+                            const val = parseInt(value, 10);
+                            if (isNaN(val)) {
+                              throw new NotHeroException(val);
+                            }
+                            return val;
+                          }
+                        }
+                    </code>
+                    </pre>
+                </section>
+                <section>
+                    <h2>ParseIntPipe - II</h2>
+
+                    <pre>
+                     <code class="hljs" data-trim contenteditable>  
+                        @Get(':id')
+                        findById( @Param('id', new ParseIntPipe()) id: number): Hero {
+                            return this.heroesService.findById(id);
+                        }
+                        @Put()
+                        updateById( @Body('id', new ParseIntPipe()) id: number, 
+                                    @Body('name') name: string): Hero {
+                            return this.heroesService.updateById(id, name);
+                        }
+                        @Delete(':id')
+                        deleteById( @Param('id', new ParseIntPipe()) id: number): Hero {
+                            return this.heroesService.deleteById(id);
+                        }
+                     </code>
+                    </pre>
+                </section>
+
+                <section>
+                    <h2>ValidationHeroPipe - I </h2>
+                    <pre>
+                         <code class="hljs" data-trim contenteditable>  
+                                import { Pipe, PipeTransform, ArgumentMetadata, BadRequestException, HttpStatus } from '@nestjs/common';
+                                import { validate } from 'class-validator';
+                                import { plainToClass } from 'class-transformer';
+                                
+                                @Pipe()
+                                export class ValidationHeroPipe implements PipeTransform&lt;any&gt; {
+                                  async transform(value, metadata: ArgumentMetadata) {
+                                    const { metatype } = metadata;
+                                    if (!metatype || !this.toValidate(metatype)) return value;
+                                    const object = plainToClass(metatype, value);
+                                    const errors = await validate(object);
+                                    if (errors.length > 0) 
+                                        throw new BadRequestException('Validation failed');
+                                    return value;
+                                  }
+                                
+                                  private toValidate(metatype): boolean {
+                                    const types = [String, Boolean, Number, Array, Object];
+                                    return !types.find((type) => metatype === type);
+                                  }
+                                }
+                         </code>
+                        </pre>
+                </section>
+                <section>
+                    <h2>ValidationHeroPipe - II </h2>
+                    <pre>
+                             <code class="hljs" data-trim contenteditable>  
+                                    import { IsString, MinLength, MaxLength } from 'class-validator';
+                                    export class HeroDto {
+                                      @MinLength(2)
+                                      @MaxLength(16)
+                                      @IsString()
+                                      readonly name: string;
+                                    }
+                             </code>
+                            </pre>
+                    <pre>
+                                <code class="hljs" data-trim contenteditable>  
+                                        @Post()
+                                        create( @Body('', new ValidationHeroPipe()) hero: HeroDto): Hero {
+                                            return this.heroesService.create(hero.name);
+                                        }
+                                </code>
+                            </pre>
+                </section>
+            </section>
+            <!-- =================== OUTPUTS =================== -->
+            <section id="guards">
+                <section data-background="#28306a">
+                    <h1 style="word-wrap: normal">Guards</h1>
+                    <img class="plain" src="images/heroes/heroes07.gif" width="40%" />
+
+                </section>
+                <section>
+                    <img class="plain" src="images/Guards_1.png" />
+                    <div style="font-size:0.9em">
+                        <ul>
+                            <li>Guards have a single responsibility.</li>
+                            <li>They determine whether request should be handled by route handler or not.</li>
+                            <li>
+                                <strong>RolesGuard:</strong> One of the best guards use-cases is the role-based authentication.</li>
+                        </ul>
+                    </div>
+                </section>
+                <section>
+                    <h2>RolesGuard - I</h2>
+                    <pre>
+                            <code class="hljs" data-trim contenteditable>  
+                                    import { Guard, CanActivate, ExecutionContext } from '@nestjs/common';
+                                    import { Reflector } from '@nestjs/core';
+                                    
+                                    @Guard()
+                                    export class RolesGuard implements CanActivate {
+                                      constructor(private readonly reflector: Reflector) { }
+                                    
+                                      canActivate(req, context: ExecutionContext): boolean {
+                                        const { parent, handler } = context;
+                                        const roles = this.reflector.get&lt;string[]&gt;('roles', handler);
+                                        if (!roles) {
+                                          return true;
+                                        }
+                                        req.user = {  /* Fake user's rol */
+                                          rol: 'user',
+                                        };
+                                        const user = req.user;
+                                        const hasRole = () => !!roles.find((role) => user.rol === role);
+                                        return user && user.rol && hasRole();
+                                      }
+                                    }
+                        </code>
+                        </pre>
+                </section>
+                <section>
+                    <h2>RolesGuard - III</h2>
+                    <pre>
+                    <code class="hljs" data-trim contenteditable>  
+                    @UseGuards(RolesGuard)
+                    @Controller('heroes')
+                    export class HeroesController {
+                       ...
+                    
+                        @Get()
+                        heroes(): Hero[] {}
+                        
+                        @Get(':id')
+                        findById( @Param('id', new ParseIntPipe()) id: number): Hero { }
+                        
+                        @Roles('user')
+                        @Get('search/:name')
+                        findByName( @Param('name') name: string): Hero[] {}
+                    </code>
+                            </pre>
+                </section>
+                <section>
+                    <h2>RolesGuard - IV</h2>
+                    <pre>
+                        <code class="hljs" data-trim contenteditable>  
+                            @Roles('admin')
+                            @Put()
+                            updateById( @Body('id', new ParseIntPipe()) id: number, @Body('name') name: string): Hero {}
+                            
+                            @Roles('admin')
+                            @Delete(':id')
+                            deleteById( @Param('id', new ParseIntPipe()) id: number): Hero {}
+                            
+                            @Roles('admin')
+                            @Post()
+                            create( @Body('', new ValidationHeroPipe()) hero: HeroDto): Hero {}
+                        
+                                        </code>
+                                </pre>
+                </section>
+            </section>
+            <section id="databases">
+                <section data-background="#28306a">
+                    <h1 style="word-wrap: normal">Databases</h1>
+                    <img class="plain" src="images/heroes/heroes08.gif" width="60%" />
+
+                </section>
+                <section>
+                    <h2>Nest support several ORM's:</h2>
+                    <ul>
+                        <li>TypeORM</li>
+                        <li>Mongoose</li>
+                        <li>Sequelize</li>
+                    </ul>
+
+                    <div style="font-size:0.9em">
+                        <pre>
+                        <code class="hljs" data-trim contenteditable>  
+                                npm install --save typeorm pg
+                                </code>
+                        </pre>
+                    </div>
+                </section>
+                <section>
+                    <h2>DatabaseProviders </h2>
+                    <pre>
+                            <code class="hljs" data-trim contenteditable>  
+                                    import { createConnection } from 'typeorm';
+                                    export const databaseProviders = [
+                                      {
+                                        provide: 'DbConnectionToken',
+                                        useFactory: async () => await createConnection({
+                                          type: 'postgres',
+                                          host: 'localhost',
+                                          port: 5432,
+                                          username: 'root',
+                                          password: 'toor',
+                                          database: 'heroes',
+                                          entities: [
+                                            __dirname + '../**/*entity.ts',
+                                          ],
+                                          synchronize: true,
+                                        }),
+                                      },
+                                    ];
+                            
+                                            </code>
+                                    </pre>
+                </section>
+                <section>
+                    <h2>DatabaseModule </h2>
+                    <pre>
+                                <code class="hljs" data-trim contenteditable>  
+                                        import { Module } from '@nestjs/common';
+                                        import { databaseProviders } from './database.providers';
+                                        
+                                        @Module({
+                                          components: [...databaseProviders],
+                                          exports: [...databaseProviders],
+                                        })
+                                        export class DatabaseModule { }
+                                
+                                                </code>
+                                        </pre>
+                </section>
+                <section>
+                    <h2>Repository Pattern </h2>
+                    <span>Hero Entity</span>
+                    <pre>
+                                    <code class="hljs" data-trim contenteditable>  
+                                            import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+                                            
+                                            @Entity()
+                                            export class Hero {
+                                              @PrimaryGeneratedColumn()
+                                              id: number;
+                                            
+                                              @Column({ length: 16, unique: true })
+                                              name: string;
+                                            }
+                                            </code>
+                                        </pre>
+                </section>
+                <section>
+                    <h2>HeroesModule </h2>
+                    <pre>
+                                        <code class="hljs" data-trim contenteditable>  
+                    import { Module } from '@nestjs/common';
+                    import { HeroesService } from './heroes.service';
+                    import { HeroesController } from './heroes.controller';
+                    import { DatabaseModule } from '../database/database.module';
+                    import { heroesProviders } from './heroes.providers';
+                    
+                    @Module({
+                      modules: [
+                        DatabaseModule,
+                      ],
+                      controllers: [
+                        HeroesController,
+                      ],
+                      components: [
+                        HeroesService,
+                        ...heroesProviders,
+                      ],
+                    })
+                    export class HeroesModule { }
+                    </code>
+                    </pre>
+                </section>
+                <section>
+                    <h2>Repository Pattern </h2>
+                    <span>Heroes Services - I</span>
+                    <pre>
+                                    <code class="hljs" data-trim contenteditable>  
+                                            @Component()
+                                            export class HeroesService {
+                                              constructor(
+                                                @Inject('HeroesRepositoryToken') 
+                                                private readonly heroesRepository: Repository&lt;Hero&gt;,
+                                              ) { }
+                                            </code>
+                                    </pre>
+                    <pre>
+                                        <code class="hljs" data-trim contenteditable>  
+                                            async findAll(): Promise&lt;Hero[]&gt; {
+                                                return await this.heroesRepository.find();
+                                            }
+                                            async findById(heroID: number): Promise&lt;Hero&gt; {
+                                                const hero = await this.heroesRepository.findOneById(heroID);
+                                                if (!hero) throw new NotHeroException(heroID);
+                                                return hero;
+                                            }
+                                                </code>
+                                        </pre>
+                </section>
+                <section>
+                    <h2>Repository Pattern </h2>
+                    <span>Heroes Services - II</span>
+                    <pre>
+                                        <code class="hljs" data-trim contenteditable>
+                                      async findByName(name: string): Promise&lt;Hero[]&gt; {
+                                        const [heroes, heroesCount] = await this.heroesRepository
+                                          .createQueryBuilder('heroes')
+                                          .select()
+                                          .where('heroes.name like %:name%', { name })
+                                          .getManyAndCount();
+                                    
+                                        if (heroesCount === 0) {
+                                          throw new NotFoundException('Heroes not found');
+                                        }
+                                        return heroes as Hero[];
+                                      }
+                                    </code>
+                                    </pre>
+                </section>
+
+                <section>
+                    <h2>Repository Pattern </h2>
+                    <span>Heroes Services - III</span>
+                    <pre>
+                                                    <code class="hljs" data-trim contenteditable>
+                                      async updateById(heroID: number, name: string): Promise&lt;Hero&gt; {
+                                        const hero: Hero = {
+                                          name,
+                                          id: heroID,
+                                        };
+                                        await this.heroesRepository.updateById(heroID, hero);
+                                        return hero;
+                                      }
+                                      async deleteById(heroID: number): Promise&lt;Hero&gt; {
+                                        const hero = await this.findById(heroID);
+                                        await this.heroesRepository.deleteById(heroID);
+                                        return hero;
+                                      }
+
+                                    </code>
+                                    </pre>
+                </section>
+
+                <section>
+                    <h2>Repository Pattern </h2>
+                    <span>Heroes Services - IV</span>
+                    <pre>
+                                                    <code class="hljs" data-trim contenteditable>
+                                      async create(name: string): Promise&lt;Hero&gt; {
+                                        try {
+                                          await this.heroesRepository.insert({ name });
+                                        } catch {
+                                          throw new RepeatHeroException({ name } as Hero);
+                                        }
+                                        return this.findOneByName(name);
+                                      }
+                                      findOneByName(name): PromiseHero&lt;Hero&gt; {
+                                        return this.heroesRepository.findOne({
+                                          name,
+                                        });
+                                    </code>
+                </pre>
+                </section>
+
+            </section>
+            <section id="testing">
+                <section data-background="#28306a">
+                    <h1 style="word-wrap: normal">Testing</h1>
+                    <img class="plain" src="images/heroes/heroes09.gif" width="60%" />
+
+                </section>
+
+                <section id="unit">
+                    <h2>Nest is easy to test</h2>
+                    <p>Nest has a special package
+                        <code class="hlts" style="display: inline; color: #e3ceab">@nestjs/testing</code>, which gives a set of utilities to boost the testing process</p>
+
+                </section>
+
+                <section>
+                    <h2>Heroes Service Testing I</h2>
+                    <span>Setup</span>
+                    <pre>
+                        <code class="hljs" data-trim contenteditable>
+                                beforeEach(async () => {
+                                    testingModule = await Test.createTestingModule({
+                                      components: [
+                                        HeroesService,
+                                        {
+                                          provide: "HeroesRepositoryToken",
+                                          useFactory: () => ({
+                                            find: jest.fn(),
+                                            findOneById: jest.fn(() => true),
+                                          }),
+                                        },
+                                      ],
+                                    }).compile();
+                                
+                                    service = testingModule.get(HeroesService);
+                                    spyRepository = testingModule.get("HeroesRepositoryToken");
+                                  });
+                        </code>
+                    </pre>
+                </section>
+
+                <section>
+                    <h2>Heroes Service Testing II</h2>
+                    <span>Some tests</span>
+                    <pre>
+                            <code class="hljs" data-trim contenteditable>
+                                    describe("#findById", () => {
+                                        it("should return an exception if no hero was found", async () => {
+                                          spyRepository.findOneById = jest.fn();
+                                    
+                                          await expect(service.findById(1)).rejects.toBeInstanceOf(NotHeroException);
+                                        });
+                                    
+                                        it("should not return an exception if a hero was found", () => {
+                                          service.findById(1);
+                                    
+                                          expect(spyRepository.findOneById).toHaveBeenCalledTimes(1);
+                                          expect(spyRepository.findOneById).toHaveBeenCalledWith(1);
+                                        });
+                                      });
+                            </code>
+                        </pre>
+                </section>
+
+                <section>
+                    <h2>Heroes Controller Testing I</h2>
+                    <span>Setup</span>
+                    <pre>
+                                <code class="hljs" data-trim contenteditable>
+                                        beforeEach(async () => {
+                                            testingModule = await Test.createTestingModule({
+                                              controllers: [HeroesController],
+                                              components: [
+                                                {
+                                                  provide: HeroesService,
+                                                  useFactory: () => ({
+                                                    create: jest.fn(),
+                                                    findAll: jest.fn(),
+                                                  }),
+                                                },
+                                              ],
+                                            }).compile();
+                                        
+                                            controller = testingModule.get(HeroesController);
+                                            spyService = testingModule.get(HeroesService);
+                                          });
+                                </code>
+                            </pre>
+                </section>
+
+                <section>
+                    <h2>Heroes Controller Testing II</h2>
+                    <span>Some tests</span>
+                    <pre>
+                                <code class="hlts" data-trim contenteditable>
+                                        it("#heroes should call to findAll method of heroes service", () => {
+                                            controller.heroes();
+                                        
+                                            expect(spyService.findAll).toHaveBeenCalledTimes(1);
+                                          });
+                                        
+                                          it("#create should call to create method of heroes service", () => {
+                                            const heroMocked = { name: "Hero mocked!" } as HeroDto;
+                                        
+                                            controller.create(heroMocked);
+                                        
+                                            expect(spyService.create).toHaveBeenCalledTimes(1);
+                                            expect(spyService.create).toHaveBeenCalledWith(heroMocked.name);
+                                          });
+                                </code>
+                            </pre>
+                </section>
+
+                <section id="e2e">
+                    <h2>End-to-End Testing</h2>
+                    <p>The end to end testing is a great way to verify how the application works from beginning to end.</p>
+
+                </section>
+
+                <section>
+                    <h2>Heroes E2E Testing I</h2>
+                    <span>Setup</span>
+                    <pre>
+                                <code class="hlts" data-trim contenteditable>
+                                        const server = express();
+                                        server.use(bodyParser.json());    
+                                        
+                                        beforeEach(async () => {
+                                            const testingModule = await Test.createTestingModule({
+                                              modules: [HeroesModule],
+                                            }).overrideComponent("DbConnectionToken")
+                                              .useValue(db)
+                                              .overrideGuard(RolesGuard)
+                                              .useValue({ canActivate: () => true })
+                                              .compile();
+                                        
+                                            app = testingModule.createNestApplication(server);
+                                            agent = request(server);
+                                        
+                                            await app.init();
+                                          });
+                                </code>
+                            </pre>
+                </section>
+
+                <section>
+                    <h2>Heroes E2E Testing</h2>
+                    <span>Some tests</span>
+                    <pre>
+                                <code class="hlts" data-trim contenteditable>
+                                        it("/GET heroes should return an array of heroes", () => {
+                                            return agent
+                                              .get("/heroes")
+                                              .expect(200)
+                                              .expect(({ body: heroes }) => {
+                                                expect(heroes).toBeInstanceOf(Array);
+                                              });
+                                          });
+                                        
+                                          it("/GET heroes/:id should return a hero", () => {
+                                            return agent
+                                              .get("/heroes/5")
+                                              .expect(200)
+                                              .expect(({ body: hero }) => {
+                                                expect(hero).not.toBeInstanceOf(Array);
+                                              });
+                                          });
+                                </code>
+                            </pre>
+                </section>
+            </section>
+
+            <!-- =================== END =================== -->
+            <section data-background="#000000">
+                <h2>Thank You</h2>
+                <div class="columns">
+                    <div class="col">
+                        <div class="qrcode" align="center"></div>
+                        <div class="half-size">
+                            <a class="qrcode-link"></a>
+
+                        </div>
+                    </div>
+                    <div class="col">
+                        <img class="plain" src="images/heroes/heroes10.gif" width="100%" />
+
+                        <p>
+                            By
+                            <a title="Visit me on Github" href="https://github.com/ccaballerog">Carlos Caballero</a>
+                            <br/>and
+
+                            <a title="Visit me on Github" href="https://github.com/xxxtonixxx">Antonio Villena</a>
+
+                        </p>
+
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- QR Codes -->
+    <script type="text/javascript">
+        // Get presentation URL
+        var qrcode_url = "https://github.com/caballerog/devfestmalaga2017";
+        if (!/^(localhost|127\.0\.1\.1|)$/.test(location.hostname)) {
+            // host is not localhost, get dynamic URL
+            //keep it simple
+            //qrcode_url = window.location.href;
+            console.log("host is not local, dynamic url: " + window.location.href);
+        }
+
+        // Generate QR Codes : class="qrcode"
+        var qrcode_elements = document.getElementsByClassName('qrcode');
+        for (var i = 0; i < qrcode_elements.length; i++) {
+            var qrcode_el = qrcode_elements[i];
+
+            var qrcode = new QRCode(qrcode_el, {
+                text: qrcode_url,
+                width: 350,
+                height: 350
+            });
+
+            // Alter generated image
+            var img_el = qrcode._el.childNodes[1];
+            img_el.classList.add("plain"); // remove border
+        }
+
+        // Add text to links : class="qrcode-link"
+        var qrcode_link_elements = document.getElementsByClassName('qrcode-link');
+        for (var i = 0; i < qrcode_link_elements.length; i++) {
+            var link_el = qrcode_link_elements[i];
+            link_el.textContent = qrcode_url;
+            link_el.href = qrcode_url;
+        }
+    </script>
+
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.js"></script>
+
+    <script>
+        // More info about config & dependencies:
+        // - https://github.com/hakimel/reveal.js#configuration
+        // - https://github.com/hakimel/reveal.js#dependencies
+        Reveal.initialize({
+            controls: true,
+            progress: true,
+            history: true,
+            center: true,
+            transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+            width: 1280,
+            height: 700,
+            /*           width: "100%",
+                      height: "100%",
+                      margin: 0,
+                      minScale: 1,
+                      maxScale: 1, */
+            dependencies: [
+                { src: 'plugin/markdown/marked.js' },
+                { src: 'plugin/markdown/markdown.js' },
+                { src: 'plugin/notes/notes.js', async: true },
+                { src: 'plugin/zoom-js/zoom.js', async: true },
+                { src: 'plugin/highlight/highlight.js', async: true, callback: function () { hljs.initHighlightingOnLoad(); } }
+            ]
+        });
+    </script>
+
+</body>
+
+</html>
